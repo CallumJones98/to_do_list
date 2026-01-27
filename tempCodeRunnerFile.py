@@ -14,48 +14,51 @@ class Task:
     # 'deadline': self.deadline, 'date created': self.date_created,
     # 'is_complete': self.is_complete
 
-
 # Json file - open, close 
 class Database:
     def __init__(self, file_name: str):
-        self.file_path = Path(file_name)
-        if not self.file_path.exists():
-            self.save_all([])
-
-    def read_all(self):
-        with open(self.file_path, 'r') as file:
-            return json.load(file)
-
-    def save_all(self, data_list):
-        with open(self.file_path, 'w') as file:
-            json.dump(data_list, file, indent=4)
-
-    def add_single_entry(self, user_entry):
-        current_data = self.read_all()
-        current_data.append(user_entry)
-        self.save_all(current_data)
+        self.json_file = Path(file_name)
+        if not self.json_file.exists():
+            self.write_file([])
       
+    def read_file(self):
+        try:
+            with open(self.json_file, 'r') as file:
+                return json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
     
+    def write_file(self, all_data):
+        with open(self.json_file, 'w') as file: 
+            json.dump(all_data, file, indent=4)
+
+
 # To do list
 class Storage:
   
   def __init__(self, db: Database):
     self.db = db
+    self.current_data = self.db.read_file()
     
-  def create_task(self):
+  def add_task(self, task: Task):
+    transformed_task = task.transform_task()
+    self.current_data.append(transformed_task)
+    self.db.write_file(self.current_data)
     
-    task_id = int(input('Task ID: '))
-    task_title = input('Title: ')
-    task_desc = input('Description: ')
-    
-    new_task = Task(task_id, task_title, task_desc)
+  def get_all_tasks(self):
+    for row in self.current_data:
+      print(row)
   
-    new_entry = new_task.transform_task()
-    
-    self.db.create_task(new_entry)
-    
-    #Save to JSON file
-
+  def get_task(self, task_identification: int):
+    self.task_identification = task_identification
+    for t in self.current_data:
+      if t['id'] == self.task_identification:
+        print(t)
+  
 test_db = Database('tasks.json')
-storage_test = Storage(test_db)
-storage_test.create_task()
+test_storage = Storage(test_db)
+task_one = Task(1, 'test', 'this is a massive test')
+test_storage.add_task(task_one)
+task_two = Task(2, 'second_test', 'this is a second test')
+test_storage.add_task(task_two)
+test_storage.get_all_tasks()

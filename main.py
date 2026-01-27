@@ -14,68 +14,100 @@ class Task:
     # 'deadline': self.deadline, 'date created': self.date_created,
     # 'is_complete': self.is_complete
 
-
 # Json file - open, close 
 class Database:
     def __init__(self, file_name: str):
-        self.file_path = Path(file_name)
-        if not self.file_path.exists():
-            self.save_all([])
-
-    def read_all(self):
-        with open(self.file_path, 'r') as file:
-            return json.load(file)
-
-    def save_all(self, data_list):
-        with open(self.file_path, 'w') as file:
-            json.dump(data_list, file, indent=4)
-
-    def add_single_entry(self, user_entry):
-        current_data = self.read_all()
-        current_data.append(user_entry)
-        self.save_all(current_data)
+        self.json_file = Path(file_name)
+        if not self.json_file.exists():
+            self.write_file([])
       
+    def read_file(self):
+        try:
+            with open(self.json_file, 'r') as file:
+                return json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
     
+    def write_file(self, all_data):
+        with open(self.json_file, 'w') as file: 
+            json.dump(all_data, file, indent=4)
+
+
 # To do list
 class Storage:
   
   def __init__(self, db: Database):
     self.db = db
+    self.current_data = self.db.read_file()
     
-  def create_task(self):
+  def add_task(self, task: Task):
+    transformed_task = task.transform_task()
+    self.current_data.append(transformed_task)
+    self.db.write_file(self.current_data)
     
-    task_id = int(input('Task ID: '))
-    task_title = input('Title: ')
-    task_desc = input('Description: ')
-    
-    new_task = Task(task_id, task_title, task_desc)
+  def get_all_tasks(self):
+    for row in self.current_data:
+      print(row)
   
-    new_entry = new_task.transform_task()
-    
-    self.db.create_task(new_entry)
-    
-    #Save to JSON file
-
-test_db = Database('tasks.json')
-storage_test = Storage(test_db)
-storage_test.create_task()
+  def get_task(self, task_identification: int):
+    for t in self.current_data:
+      if t['id'] == task_identification:
+        print(t)
 
   
-  
-  '''  
-  def read_task(self):
-    self.db.read_file()
-    
-  def update_task(self):
-  
-  def delete_task(self)
-  
+  def update_task(self, task_identification: int, new_title=None, new_description=None):
+      self.task_identification = task_identification
+      task_found = False
+
+      for t in self.current_data:
+        if t['id'] == self.task_identification:
+          if new_title:
+            t['title'] = new_title
+          if new_description:
+            t['description'] = new_description
+          
+          task_found = True
+          break 
+        
+      if task_found:
+        self.db.write_file(self.current_data)
+        print(f"Task {self.task_identification} updated successfully.")
+      else:
+        print(f"No task with ID {self.task_identification} found.")
+          
+  def remove_task(self, task_identification: int):
+    for t in self.current_data:
+      if t['id'] == task_identification:
+        del t
 
 
 def UserInteratction:
-'''
   
-
-
-
-
+  def __init__(self, main_storage: Storage):
+    self.main_storage = main_storage
+  
+  def user_workflow(self):
+    
+    print('Welcome to your to-do list: ')
+    
+    print('[0] - Quit \n [1] - See All Tasks \n [2] - See Task \n [3] - Add Task \n [4] - Update Task \n [5] - Delete Task')
+    user_inp = int(input('Please enter: '))
+  
+    while user_inp != 0:
+      
+      if user_inp == 1:
+        self.main_storage.get_all_tasks()
+      
+      elif user_inp == 2:
+        get_task_id = int(input('Enter Task ID: '))
+        self.main_storage.get_task(get_task_id)
+      
+      elif user_inp == 3:
+        enter_id = int(input('Enter Task ID: '))
+        enter_title = str(input('Enter Title: '))
+        enter_desc = str(input('Enter Task Description: '))
+        new_task = Task(enter_id, enter_title, enter_desc)
+        main_storage.add_task(new_task)
+      
+      elif user_inp == 4:
+        # To finish
