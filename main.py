@@ -60,28 +60,48 @@ class Storage:
       task_found = False
 
       for t in self.current_data:
-        if t['id'] == self.task_identification:
-          if new_title:
-            t['title'] = new_title
-          if new_description:
-            t['description'] = new_description
-          
-          task_found = True
-          break 
-        
+          if t['id'] == self.task_identification:
+              print(f"\n Current Task Details ")
+              print(f"ID: {t['id']}")
+              print(f"Title: {t['title']}")
+              print(f"Description: {t['description']}")
+              
+              if new_title:
+                  t['title'] = new_title
+              if new_description:
+                  t['description'] = new_description
+              
+              task_found = True
+              break 
+      
       if task_found:
-        self.db.write_file(self.current_data)
-        print(f"Task {self.task_identification} updated successfully.")
+          if new_title or new_description:
+              self.db.write_file(self.current_data)
+              print(f"Task {self.task_identification} updated successfully.")
       else:
-        print(f"No task with ID {self.task_identification} found.")
-          
+          print(f"No task with ID {self.task_identification} found.")
+    
   def remove_task(self, task_identification: int):
-    for t in self.current_data:
-      if t['id'] == task_identification:
-        del t
+      task_to_remove = None
+    
+      for t in self.current_data:
+          if t['id'] == task_identification:
+              task_to_remove = t
+              break
+              
+      if task_to_remove:
+          print(f"\nRemoving Task: {task_to_remove['title']}")
+          self.current_data.remove(task_to_remove)
+          
+          self.db.write_file(self.current_data)
+          print(f"Task {task_identification} deleted successfully.")
+          return True
+      else:
+          print(f"Error: Task with ID {task_identification} not found.")
+          return False
 
 
-def UserInteratction:
+class UserInteraction:
   
   def __init__(self, main_storage: Storage):
     self.main_storage = main_storage
@@ -90,7 +110,8 @@ def UserInteratction:
     
     print('Welcome to your to-do list: ')
     
-    print('[0] - Quit \n [1] - See All Tasks \n [2] - See Task \n [3] - Add Task \n [4] - Update Task \n [5] - Delete Task')
+    menu = ('[0] - Quit \n [1] - See All Tasks \n [2] - See Task \n [3] - Add Task \n [4] - Update Task \n [5] - Delete Task')
+    print(menu)
     user_inp = int(input('Please enter: '))
   
     while user_inp != 0:
@@ -107,7 +128,44 @@ def UserInteratction:
         enter_title = str(input('Enter Title: '))
         enter_desc = str(input('Enter Task Description: '))
         new_task = Task(enter_id, enter_title, enter_desc)
-        main_storage.add_task(new_task)
+        self.main_storage.add_task(new_task)
       
       elif user_inp == 4:
-        # To finish
+        user_task_id = int(input("Enter ID to change: "))
+    
+        self.main_storage.update_task(user_task_id) 
+        change_title = input("Enter new title (or press Enter to keep current): ")
+        change_desc = input("Enter new description (or press Enter to keep current): ")
+        
+        self.main_storage.update_task(
+            user_task_id, 
+            new_title=change_title if change_title else None, 
+            new_description=change_desc if change_desc else None
+        )
+        
+      elif user_inp == 5:
+        delete_id = int(input("Enter ID to delete: "))
+        self.main_storage.remove_task(delete_id)
+      
+      #End of while loop
+      print("\n" + menu)
+      user_inp = int(input('Please enter choice: '))
+  
+  print('Thank you - tasks closed and saved')  
+        
+
+if __name__ == "__main__":
+
+    my_db = Database("tasks.json")
+    
+    my_storage = Storage(my_db)
+    
+    ui = UserInteraction(my_storage)
+    
+    try:
+        ui.user_workflow()
+    except ValueError:
+        print("\n[Error]: Please enter numbers only for menu choices and IDs.")
+    except KeyboardInterrupt:
+        print("\n\nProgram closed manually. Goodbye!")
+        
